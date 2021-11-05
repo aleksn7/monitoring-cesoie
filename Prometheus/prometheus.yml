@@ -1,0 +1,18 @@
+# /etc/prometheus/prometheus.yml
+
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'node'
+    static_configs:
+    - targets:
+       - node_exporter:9100
+       - faucet.cesoie.net:9100
+       - cesoie.net:9100
+  
+  - job_name: 'blockscout'
+    static_configs:
+    - targets:
+      - cesoie.net

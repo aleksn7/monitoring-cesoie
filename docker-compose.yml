@@ -1,0 +1,66 @@
+version: "3"
+
+services:
+  node_exporter:
+    image: prom/node-exporter
+    #container_name: node_exporter
+    ports:
+      - 9100:9100
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    restart: always
+
+  nginx:
+    image: nginx:latest
+    #container_name: nginx
+    ports:
+      - 443:443
+      - 80:80
+    volumes:
+      - ./Nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./Certs/fullchain.pem:/fullchain.pem:ro
+      - ./Certs/privkey.pem:/privkey.pem:ro
+    links: 
+      - grafana
+    restart: always
+
+  prometheus:
+    image: prom/prometheus
+    #container_name: prometheus
+    ports:
+      - 127.0.0.1:9090:9090
+    volumes:
+      - ./Prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    links: 
+      - node_exporter
+    restart: always
+
+  grafana:
+    #container_name: grafana
+    image: grafana/grafana:7.5.2
+    environment:
+      - GF_SERVER_DOMAIN=monitoring.cesoie.io
+      - GF_SERVER_ROOT_URL=https://%(domain)s/
+      - GF_SMTP_ENABLED=true
+      - GF_SMTP_HOST=${SMTP_HOST}
+      - GF_SMTP_SKIP_VERIFY=true
+      - GF_SMTP_USER=${SMTP_USER}
+      - GF_SMTP_PASSWORD=${SMTP_PASSWORD}
+      - GF_SMTP_FROM_ADDRESS=${SMTP_USER}
+      - GF_SMTP_FROM_NAME=Cesoie Grafana
+    ports:
+      - 127.0.0.1:3000:3000
+    volumes:
+      - grafana-data:/var/lib/grafana
+    links: 
+      - prometheus
+    restart: always
+
+volumes: 
+  grafana-data:
+  prometheus-data:
